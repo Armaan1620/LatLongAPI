@@ -1,0 +1,17 @@
+{{ define "404.html" }}
+{{ template "layout.html" . }}
+{{ end }}
+
+{{ define "title" }}Not Found - LatLongAPI{{ end }}
+
+{{ define "content" }}
+<section class="page-header">
+    <h1>Page not found</h1>
+    <p>The path <code>{{ .Path }}</code> could not be located.</p>
+    <p><a href="/" class="btn btn-primary">Back to home</a></p>
+</section>
+{{ end }}
+
+
+
+

@@ -1,0 +1,58 @@
+{{ define "docs.html" }}
+{{ template "layout.html" . }}
+{{ end }}
+
+{{ define "title" }}LatLongAPI Docs{{ end }}
+
+{{ define "content" }}
+<section class="page-header">
+    <h1>API Documentation</h1>
+    <p>Everything you need to start working with latitude and longitude data in your applications.</p>
+</section>
+
+<section class="docs-section">
+    <h2>Base URL</h2>
+    <pre><code>https://your-domain.example.com/api/v1</code></pre>
+</section>
+
+<section class="docs-section">
+    <h2>Endpoint: Convert coordinates</h2>
+    <p>Return basic information about a coordinate pair.</p>
+
+    <h3>Request</h3>
+    <pre><code>GET /api/v1/convert?lat=51.5&amp;lng=-0.12</code></pre>
+
+    <h3>Query Parameters</h3>
+    <ul>
+        <li><strong>lat</strong> – Latitude as a string (e.g. <code>51.5</code>).</li>
+        <li><strong>lng</strong> – Longitude as a string (e.g. <code>-0.12</code>).</li>
+    </ul>
+
+    <h3>Sample response</h3>
+    <pre><code>{
+  "latitude": "51.5074",
+  "longitude": "-0.1278",
+  "address": "Westminster, London, Greater London, England, SW1A 1AA, United Kingdom",
+  "city": "London",
+  "country": "United Kingdom",
+  "state": "England",
+  "postcode": "SW1A 1AA",
+  "road": "Parliament Square"
+}</code></pre>
+    <p>The API performs reverse geocoding using OpenStreetMap's Nominatim service, returning detailed address information including city, country, state, postcode, and road name when available.</p>
+</section>
+
+<section class="docs-section">
+    <h2>Authentication</h2>
+    <p>This demo implementation does not enforce authentication, but you can add API key checks in the Go handlers
+        if you plan to deploy this publicly.</p>
+</section>
+
+<section class="docs-section">
+    <h2>Rate limiting</h2>
+    <p>No rate limiting is implemented out of the box in this clone. In a real deployment you can add middleware to
+        apply per-IP or per-key quotas.</p>
+</section>
+{{ end }}
+
+

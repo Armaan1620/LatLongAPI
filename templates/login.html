@@ -1,0 +1,237 @@
+{{ define "login.html" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - LatLongAPI</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div id="app"></div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp } = Vue;
+
+        // Header Component
+        const AppHeader = {
+            name: 'AppHeader',
+            template: `
+                <header class="site-header">
+                    <div class="container header-inner">
+                        <div class="nav-left">
+                            <a href="/" class="logo">LatLongAPI</a>
+                            <nav class="nav">
+                                <a href="/why-latlong-gps">Why LatLongGPS?</a>
+                                <a href="/personal">Personal</a>
+                                <a href="/business">Business</a>
+                                <a href="/pricing">Pricing</a>
+                            </nav>
+                        </div>
+                        <div class="nav-right">
+                            <a href="/demo" class="btn-nav">Try for free</a>
+                            <a v-if="!isAuthenticated" href="/login" class="btn-nav">Login</a>
+                            <button v-else @click="handleLogout" class="btn-nav">Logout</button>
+                        </div>
+                    </div>
+                </header>
+            `,
+            props: {
+                isAuthenticated: {
+                    type: Boolean,
+                    default: false
+                }
+            },
+            emits: ['logout'],
+            methods: {
+                handleLogout() {
+                    this.$emit('logout');
+                }
+            }
+        };
+
+        // Footer Component
+        const AppFooter = {
+            name: 'AppFooter',
+            template: `
+                <footer class="site-footer">
+                    <div class="container footer-inner">
+                        <span>&copy; 2026 LatLongAPI (Go clone)</span>
+                        <span>Built with Go's net/http and HTML templates.</span>
+                    </div>
+                </footer>
+            `
+        };
+
+        // Login Form Component
+        const LoginForm = {
+            name: 'LoginForm',
+            data() {
+                return {
+                    email: '',
+                    password: '',
+                    error: null,
+                    loading: false,
+                    isRegisterMode: false
+                };
+            },
+            methods: {
+                async handleSubmit() {
+                    this.error = null;
+                    this.loading = true;
+
+                    const url = this.isRegisterMode ? '/api/auth/register' : '/api/auth/login';
+                    const payload = {
+                        email: this.email,
+                        password: this.password
+                    };
+
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        let data;
+                        try {
+                            data = await response.json();
+                        } catch (e) {
+                            this.error = 'Invalid response from server';
+                            this.loading = false;
+                            return;
+                        }
+
+                        if (!response.ok) {
+                            this.error = data.error || 'An error occurred';
+                            this.loading = false;
+                            return;
+                        }
+
+                        // Store token
+                        if (data.token) {
+                            localStorage.setItem('token', data.token);
+                            
+                            // Set cookie for server-side access
+                            document.cookie = `token=${data.token}; path=/; max-age=86400`; // 24 hours
+
+                            // Redirect to home
+                            window.location.href = '/';
+                        } else {
+                            this.error = 'No token received from server';
+                            this.loading = false;
+                        }
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        this.error = 'Network error. Please try again.';
+                        this.loading = false;
+                    }
+                },
+                toggleMode() {
+                    this.isRegisterMode = !this.isRegisterMode;
+                    this.error = null;
+                }
+            },
+            template: `
+                <div class="login-container">
+                    <div class="login-card">
+                        <h1><span v-text="isRegisterMode ? 'Create Account' : 'Login'"></span></h1>
+                        <p class="login-subtitle"><span v-text="isRegisterMode ? 'Sign up to get started' : 'Welcome back! Please login to your account.'"></span></p>
+                        
+                        <form @submit.prevent="handleSubmit" class="login-form">
+                            <div v-if="error" class="error-message"><span v-text="error"></span></div>
+                            
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input 
+                                    type="email" 
+                                    id="email" 
+                                    v-model="email"
+                                    required
+                                    placeholder="your@email.com"
+                                >
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input 
+                                    type="password" 
+                                    id="password" 
+                                    v-model="password"
+                                    required
+                                    :placeholder="isRegisterMode ? 'At least 6 characters' : 'Enter your password'"
+                                    minlength="6"
+                                >
+                            </div>
+                            
+                            <button 
+                                type="submit" 
+                                class="btn btn-primary login-button"
+                                :disabled="loading"
+                            >
+                                <span v-if="loading">Processing...</span>
+                                <span v-else><span v-text="isRegisterMode ? 'Sign Up' : 'Login'"></span></span>
+                            </button>
+                        </form>
+                        
+                        <div class="login-footer">
+                            <p>
+                                <span><span v-text="isRegisterMode ? 'Already have an account?' : 'Don\\'t have an account?'"></span></span>
+                                <a href="#" @click.prevent="toggleMode" class="link">
+                                    <span v-text="isRegisterMode ? 'Login' : 'Sign up'"></span>
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        // Main App Component
+        const LoginApp = {
+            name: 'LoginApp',
+            components: {
+                AppHeader,
+                LoginForm,
+                AppFooter
+            },
+            data() {
+                return {
+                    isAuthenticated: false
+                };
+            },
+            mounted() {
+                this.checkAuth();
+            },
+            methods: {
+                checkAuth() {
+                    const token = localStorage.getItem('token');
+                    this.isAuthenticated = !!token;
+                },
+                handleLogout() {
+                    localStorage.removeItem('token');
+                    document.cookie = 'token=; path=/; max-age=0';
+                    this.isAuthenticated = false;
+                    window.location.href = '/';
+                }
+            },
+            template: `
+                <div>
+                    <AppHeader :is-authenticated="isAuthenticated" @logout="handleLogout" />
+                    <main class="site-main">
+                        <LoginForm />
+                    </main>
+                    <AppFooter />
+                </div>
+            `
+        };
+
+        createApp(LoginApp).mount('#app');
+    </script>
+</body>
+</html>
+{{ end }}
+

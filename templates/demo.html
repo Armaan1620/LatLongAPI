@@ -1,0 +1,392 @@
+{{ define "demo.html" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LatLongAPI Demo</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+    <div id="app"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp } = Vue;
+
+        // Header Component
+        const AppHeader = {
+            name: 'AppHeader',
+            template: `
+                <header class="site-header">
+                    <div class="container header-inner">
+                        <a href="/" class="logo">LatLongAPI</a>
+                        <nav class="nav">
+                            <a href="/why-latlong-gps">WhyLatLongGPS</a>
+                            <a href="/personal">Personal</a>
+                            <a href="/business">Business</a>
+                            <a href="/pricing">Pricing</a>
+                        </nav>
+                    </div>
+                </header>
+            `
+        };
+
+        // Page Header Component
+        const PageHeader = {
+            name: 'PageHeader',
+            template: `
+                <section class="page-header">
+                    <h1>Try LatLongAPI</h1>
+                    <p>Enter latitude and longitude coordinates to see the address and location on the map.</p>
+                </section>
+            `
+        };
+
+        // Search Form Component
+        const SearchForm = {
+            name: 'SearchForm',
+            props: {
+                latitude: {
+                    type: String,
+                    required: true
+                },
+                longitude: {
+                    type: String,
+                    required: true
+                },
+                loading: {
+                    type: Boolean,
+                    default: false
+                }
+            },
+            emits: ['update:latitude', 'update:longitude', 'submit'],
+            methods: {
+                handleSubmit(event) {
+                    event.preventDefault();
+                    this.$emit('submit');
+                },
+                updateLatitude(event) {
+                    this.$emit('update:latitude', event.target.value);
+                },
+                updateLongitude(event) {
+                    this.$emit('update:longitude', event.target.value);
+                }
+            },
+            template: `
+                <div class="demo-controls">
+                    <form @submit.prevent="handleSubmit" class="demo-form">
+                        <div class="form-group">
+                            <label for="latitude">Latitude</label>
+                            <input 
+                                type="text" 
+                                id="latitude" 
+                                :value="latitude"
+                                @input="updateLatitude"
+                                placeholder="e.g., 51.5074"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="longitude">Longitude</label>
+                            <input 
+                                type="text" 
+                                id="longitude" 
+                                :value="longitude"
+                                @input="updateLongitude"
+                                placeholder="e.g., -0.1278"
+                            >
+                        </div>
+                        <button 
+                            type="submit" 
+                            class="btn btn-primary"
+                            :disabled="loading"
+                        >
+                            <span v-if="loading">Loading...</span>
+                            <span v-else>Get Address</span>
+                        </button>
+                    </form>
+                </div>
+            `
+        };
+
+        // Results Display Component
+        const ResultsDisplay = {
+            name: 'ResultsDisplay',
+            props: {
+                error: {
+                    type: String,
+                    default: null
+                },
+                loading: {
+                    type: Boolean,
+                    default: false
+                },
+                addressData: {
+                    type: Object,
+                    default: null
+                },
+                latitude: {
+                    type: String,
+                    default: ''
+                },
+                longitude: {
+                    type: String,
+                    default: ''
+                }
+            },
+            methods: {
+                formatCoordinate(coord) {
+                    const num = parseFloat(coord);
+                    return isNaN(num) ? coord : num.toFixed(6);
+                }
+            },
+            template: `
+                <div class="address-result">
+                    <div v-if="error" class="error">
+                        <p v-text="error"></p>
+                    </div>
+                    <div v-else-if="loading" class="loading">
+                        <p>Loading...</p>
+                    </div>
+                    <div v-else-if="addressData" class="address-display">
+                        <h3>Address</h3>
+                        <p v-if="addressData.address" v-text="addressData.address"></p>
+                        <h3>Coordinates</h3>
+                        <p>Latitude: <span v-text="formatCoordinate(latitude)"></span>, Longitude: <span v-text="formatCoordinate(longitude)"></span></p>
+                        <p v-if="addressData.country"><strong>Country:</strong> <span v-text="addressData.country"></span></p>
+                        <p v-if="addressData.city"><strong>City:</strong> <span v-text="addressData.city"></span></p>
+                        <p v-if="addressData.state"><strong>State:</strong> <span v-text="addressData.state"></span></p>
+                        <p v-if="addressData.postcode"><strong>Postcode:</strong> <span v-text="addressData.postcode"></span></p>
+                        <p v-if="addressData.road"><strong>Road:</strong> <span v-text="addressData.road"></span></p>
+                    </div>
+                    <div v-else class="placeholder">
+                        <p>Enter coordinates above to see the address here.</p>
+                    </div>
+                </div>
+            `
+        };
+
+        // Map Component
+        const MapDisplay = {
+            name: 'MapDisplay',
+            props: {
+                latitude: {
+                    type: String,
+                    default: ''
+                },
+                longitude: {
+                    type: String,
+                    default: ''
+                }
+            },
+            data() {
+                return {
+                    map: null,
+                    marker: null
+                };
+            },
+            watch: {
+                latitude() {
+                    this.updateMap();
+                },
+                longitude() {
+                    this.updateMap();
+                }
+            },
+            mounted() {
+                this.$nextTick(() => {
+                    this.initMap();
+                });
+            },
+            beforeUnmount() {
+                if (this.map) {
+                    this.map.remove();
+                }
+            },
+            methods: {
+                initMap() {
+                    const mapContainer = this.$refs.mapContainer;
+                    if (!mapContainer || typeof L === 'undefined') {
+                        return;
+                    }
+
+                    const lat = parseFloat(this.latitude) || 51.5074;
+                    const lng = parseFloat(this.longitude) || -0.1278;
+
+                    this.map = L.map(mapContainer).setView([lat, lng], 13);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(this.map);
+
+                    this.marker = L.marker([lat, lng]).addTo(this.map);
+                },
+                updateMap() {
+                    if (!this.map) {
+                        return;
+                    }
+
+                    const lat = parseFloat(this.latitude);
+                    const lng = parseFloat(this.longitude);
+
+                    if (isNaN(lat) || isNaN(lng)) {
+                        return;
+                    }
+
+                    this.map.setView([lat, lng], 13);
+
+                    if (this.marker) {
+                        this.map.removeLayer(this.marker);
+                    }
+
+                    this.marker = L.marker([lat, lng]).addTo(this.map);
+                }
+            },
+            template: `
+                <div ref="mapContainer" class="map-container"></div>
+            `
+        };
+
+        // Footer Component
+        const AppFooter = {
+            name: 'AppFooter',
+            template: `
+                <footer class="site-footer">
+                    <div class="container footer-inner">
+                        <span>&copy; 2026 LatLongAPI (Go clone)</span>
+                        <span>Built with Go's net/http and HTML templates.</span>
+                    </div>
+                </footer>
+            `
+        };
+
+        // Main Demo App Component
+        const DemoApp = {
+            name: 'DemoApp',
+            components: {
+                AppHeader,
+                PageHeader,
+                SearchForm,
+                ResultsDisplay,
+                MapDisplay,
+                AppFooter
+            },
+            data() {
+                return {
+                    latitude: '51.5074',
+                    longitude: '-0.1278',
+                    loading: false,
+                    error: null,
+                    addressData: null
+                };
+            },
+            mounted() {
+                // Map will initialize automatically via MapDisplay component
+            },
+            methods: {
+                async getAddress() {
+                    if (!this.latitude || !this.longitude) {
+                        this.error = 'Please enter both latitude and longitude.';
+                        this.addressData = null;
+                        return;
+                    }
+
+                    const latNum = parseFloat(this.latitude);
+                    const lngNum = parseFloat(this.longitude);
+
+                    if (isNaN(latNum) || isNaN(lngNum)) {
+                        this.error = 'Invalid coordinates. Please enter valid numbers.';
+                        this.addressData = null;
+                        return;
+                    }
+
+                    // Validate coordinate ranges
+                    if (latNum < -90 || latNum > 90) {
+                        this.error = 'Latitude must be between -90 and 90.';
+                        this.addressData = null;
+                        return;
+                    }
+
+                    if (lngNum < -180 || lngNum > 180) {
+                        this.error = 'Longitude must be between -180 and 180.';
+                        this.addressData = null;
+                        return;
+                    }
+
+                    this.loading = true;
+                    this.error = null;
+                    this.addressData = null;
+
+                    try {
+                        const response = await fetch(
+                            `/api/v1/convert?lat=${encodeURIComponent(this.latitude)}&lng=${encodeURIComponent(this.longitude)}`
+                        );
+                        const data = await response.json();
+
+                        if (data.error) {
+                            this.error = data.error;
+                            this.addressData = null;
+                        } else {
+                            this.addressData = data;
+                            this.error = null;
+                        }
+                    } catch (error) {
+                        this.error = 'Error fetching address. Please try again.';
+                        this.addressData = null;
+                        console.error('Error:', error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                updateLatitude(value) {
+                    this.latitude = value;
+                },
+                updateLongitude(value) {
+                    this.longitude = value;
+                }
+            },
+            template: `
+                <div>
+                    <AppHeader />
+                    <main class="site-main">
+                        <div class="container">
+                            <PageHeader />
+                            <section class="demo-section">
+                                <SearchForm 
+                                    :latitude="latitude"
+                                    :longitude="longitude"
+                                    :loading="loading"
+                                    @update:latitude="updateLatitude"
+                                    @update:longitude="updateLongitude"
+                                    @submit="getAddress"
+                                />
+                                <div class="demo-results">
+                                    <ResultsDisplay 
+                                        :error="error"
+                                        :loading="loading"
+                                        :address-data="addressData"
+                                        :latitude="latitude"
+                                        :longitude="longitude"
+                                    />
+                                    <MapDisplay 
+                                        ref="mapDisplay"
+                                        :latitude="latitude"
+                                        :longitude="longitude"
+                                    />
+                                </div>
+                            </section>
+                        </div>
+                    </main>
+                    <AppFooter />
+                </div>
+            `
+        };
+
+        // Create and mount the app
+        createApp(DemoApp).mount('#app');
+    </script>
+</body>
+</html>
+{{ end }}

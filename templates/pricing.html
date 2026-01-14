@@ -1,0 +1,64 @@
+{{ define "pricing.html" }}
+{{ template "layout.html" . }}
+{{ end }}
+
+{{ define "title" }}LatLongAPI Pricing{{ end }}
+
+{{ define "content" }}
+<section class="page-header">
+    <h1>Simple, Transparent Pricing</h1>
+    <p>Start for free, scale when you're ready. Choose the plan that fits your needs.</p>
+</section>
+
+<section class="pricing-grid">
+    <div class="pricing-card">
+        <h2>Free</h2>
+        <p class="price">$0</p>
+        <p class="subtitle">Perfect for getting started</p>
+        <ul>
+            <li>5,000 requests / month</li>
+            <li>2 requests / second</li>
+            <li>Basic reverse geocoding</li>
+            <li>Community support</li>
+        </ul>
+    </div>
+    <div class="pricing-card pricing-card-featured">
+        <h2>Pro</h2>
+        <p class="price">$29<span>/month</span></p>
+        <p class="subtitle">For production applications</p>
+        <ul>
+            <li>500,000 requests / month</li>
+            <li>20 requests / second</li>
+            <li>Enhanced address details</li>
+            <li>Email support</li>
+            <li>Custom radius defaults</li>
+        </ul>
+    </div>
+    <div class="pricing-card">
+        <h2>Scale</h2>
+        <p class="price">$99<span>/month</span></p>
+        <p class="subtitle">For high-volume usage</p>
+        <ul>
+            <li>5,000,000 requests / month</li>
+            <li>100 requests / second</li>
+            <li>Priority support</li>
+            <li>Advanced features</li>
+            <li>SLA guarantee</li>
+        </ul>
+    </div>
+    <div class="pricing-card">
+        <h2>Enterprise</h2>
+        <p class="price">Custom</p>
+        <p class="subtitle">Tailored to your needs</p>
+        <ul>
+            <li>Unlimited requests</li>
+            <li>Custom rate limits</li>
+            <li>Dedicated support</li>
+            <li>Custom deployment</li>
+            <li>On-premise options</li>
+        </ul>
+    </div>
+</section>
+{{ end }}
+
+
