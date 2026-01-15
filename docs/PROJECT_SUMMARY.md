@@ -166,7 +166,7 @@ POST /api/auth/register
   "user": {
     "id": 1,
     "email": "user@example.com",
-    "created_at": "2026-01-15T13:00:00Z"
+    "created_at": "2024-01-15T13:00:00Z"
   }
 }
 ```
@@ -191,7 +191,7 @@ POST /api/auth/login
   "user": {
     "id": 1,
     "email": "user@example.com",
-    "created_at": "2026-01-15T13:00:00Z"
+    "created_at": "2024-01-15T13:00:00Z"
   }
 }
 ```
@@ -207,7 +207,7 @@ Authorization: Bearer {token}
 {
   "id": 1,
   "email": "user@example.com",
-  "created_at": "2026-01-15T13:00:00Z"
+  "created_at": "2024-01-15T13:00:00Z"
 }
 ```
 
