@@ -23,7 +23,7 @@ var tmplCache *template.Template
 // loadTemplates parses all templates in the templates directory.
 func loadTemplates() {
 	var err error
-	tmplCache, err = template.ParseGlob("templates/*.html")
+	tmplCache, err = template.ParseGlob("frontend/templates/*.html")
 	if err != nil {
 		log.Fatalf("error parsing templates: %v", err)
 	}
@@ -326,7 +326,7 @@ func main() {
 	mux.HandleFunc("/healthz", healthHandler)
 
 	// Static files.
-	staticDir := http.Dir("static")
+	staticDir := http.Dir("frontend/static")
 	fileServer := http.FileServer(staticDir)
 	mux.Handle("/static/", http.StripPrefix("/static/", fileServer))
 

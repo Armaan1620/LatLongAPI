@@ -75,16 +75,26 @@ curl "http://localhost:8080/api/v1/convert?lat=51.5074&lng=-0.1278"
 latlongapi/
 ├── main.go              # Main server application
 ├── go.mod               # Go module file
-├── templates/           # HTML templates
-│   ├── layout.html      # Base layout template
-│   ├── index.html       # Homepage
-│   ├── demo.html        # Demo page with interactive map
-│   ├── docs.html        # API documentation
-│   ├── pricing.html     # Pricing page
-│   └── 404.html         # 404 error page
-└── static/
-    └── css/
-        └── styles.css   # Stylesheet
+├── backend/             # Backend Go code
+│   ├── auth/            # Authentication logic
+│   ├── handlers/        # HTTP handlers
+│   ├── middleware/      # HTTP middleware
+│   ├── models/          # Data models
+│   └── store/           # Data storage
+└── frontend/            # Frontend assets
+    ├── templates/       # HTML templates
+    │   ├── layout.html  # Base layout template
+    │   ├── index.html   # Homepage
+    │   ├── demo.html    # Demo page with interactive map
+    │   ├── docs.html    # API documentation
+    │   ├── pricing.html # Pricing page
+    │   └── 404.html     # 404 error page
+    ├── static/          # Static assets
+    │   ├── css/         # Stylesheets
+    │   └── img/         # Images
+    └── src/             # JavaScript source files
+        ├── components/  # Vue.js components
+        └── assets/      # JavaScript assets
 ```
 
 ## Technology Stack
